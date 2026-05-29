@@ -23,6 +23,7 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
   const [preview, setPreview] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [posting, setPosting] = useState(false)
+  const [filterFavorites, setFilterFavorites] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Realtime: パートナーの新着投稿を反映
@@ -32,7 +33,7 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
       .channel(`couple:${coupleId}:meals`)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'meal_posts', filter: `couple_id=eq.${coupleId}` }, async (payload) => {
         const newPost = payload.new as MealPost
-        if (newPost.created_by === currentUserId) return // 自分の投稿は楽観的更新済み
+        if (newPost.created_by === currentUserId) return
         const { data } = await supabase.storage.from('meal-photos').createSignedUrl(newPost.photo_path, 3600)
         setPosts(prev => [{ ...newPost, signedUrl: data?.signedUrl ?? '', reactions: [] }, ...prev])
       })
@@ -80,19 +81,27 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
     setPosts(prev => prev.filter(p => p.id !== id))
   }
 
-  function handleReaction(postId: string, emoji: string | null, reactionId: string | null) {
+  function handleLike(postId: string, liked: boolean, reactionId: string | null) {
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p
-      if (!emoji) {
+      if (!liked) {
         return { ...p, reactions: p.reactions.filter(r => r.id !== reactionId) }
       }
-      const existing = p.reactions.find(r => r.user_id === currentUserId)
-      if (existing) {
-        return { ...p, reactions: p.reactions.map(r => r.user_id === currentUserId ? { ...r, emoji } : r) }
+      return {
+        ...p,
+        reactions: [
+          ...p.reactions,
+          { id: reactionId!, meal_post_id: postId, user_id: currentUserId, emoji: '❤️', created_at: new Date().toISOString() },
+        ],
       }
-      return { ...p, reactions: [...p.reactions, { id: reactionId!, meal_post_id: postId, user_id: currentUserId, emoji, created_at: new Date().toISOString() }] }
     }))
   }
+
+  const displayedPosts = filterFavorites
+    ? posts.filter(p => p.reactions.some(r => r.user_id === currentUserId))
+    : posts
+
+  const favoriteCount = posts.filter(p => p.reactions.some(r => r.user_id === currentUserId)).length
 
   return (
     <div className="space-y-5">
@@ -102,8 +111,11 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
           <div className="relative aspect-square rounded-xl overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={preview} alt="プレビュー" className="w-full h-full object-cover" />
-            <button type="button" onClick={() => { setFile(null); setPreview(null); if (fileRef.current) fileRef.current.value = '' }}
-              className="absolute top-2 right-2 bg-black/50 text-white w-7 h-7 rounded-full text-sm">✕</button>
+            <button
+              type="button"
+              onClick={() => { setFile(null); setPreview(null); if (fileRef.current) fileRef.current.value = '' }}
+              className="absolute top-2 right-2 bg-black/50 text-white w-7 h-7 rounded-full text-sm"
+            >✕</button>
           </div>
         ) : (
           <label className="block border-2 border-dashed border-gray-200 rounded-xl p-6 text-center cursor-pointer hover:border-primary-300 transition-colors">
@@ -112,31 +124,73 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
             <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleFileChange} className="hidden" />
           </label>
         )}
-        <input type="text" value={memo} onChange={e => setMemo(e.target.value)}
+        <input
+          type="text" value={memo} onChange={e => setMemo(e.target.value)}
           placeholder="一言メモ（任意）"
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500" />
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
         <label className="flex items-center gap-2 cursor-pointer">
           <input type="checkbox" checked={togetherFlag} onChange={e => setTogetherFlag(e.target.checked)} className="w-4 h-4 accent-primary-600" />
           <span className="text-sm text-gray-600">🍽️ 一緒に食べたよ</span>
         </label>
         {error && <p className="text-sm text-red-600">{error}</p>}
-        <button type="submit" disabled={!file || posting}
-          className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm rounded-lg py-2 transition-colors">
+        <button
+          type="submit" disabled={!file || posting}
+          className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-sm rounded-lg py-2 transition-colors"
+        >
           {posting ? '投稿中...' : '投稿する'}
         </button>
       </form>
 
+      {/* フィルターボタン */}
+      {posts.length > 0 && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilterFavorites(false)}
+            className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+              !filterFavorites ? 'bg-primary-600 text-white border-primary-600' : 'bg-white text-gray-600 border-gray-200'
+            }`}
+          >
+            すべて（{posts.length}）
+          </button>
+          <button
+            onClick={() => setFilterFavorites(true)}
+            className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
+              filterFavorites ? 'bg-pink-500 text-white border-pink-500' : 'bg-white text-gray-600 border-gray-200'
+            }`}
+          >
+            ❤️ お気に入り（{favoriteCount}）
+          </button>
+        </div>
+      )}
+
       {/* フィード */}
-      {posts.length === 0 ? (
+      {displayedPosts.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
-          <div className="text-5xl mb-3">🍜</div>
-          <p className="text-sm">まだ投稿がありません</p>
-          <p className="text-xs mt-1">食事の写真を投稿してみましょう</p>
+          {filterFavorites ? (
+            <>
+              <div className="text-5xl mb-3">🤍</div>
+              <p className="text-sm">お気に入りの投稿はまだありません</p>
+              <p className="text-xs mt-1">気に入った投稿にハートを押してみましょう</p>
+            </>
+          ) : (
+            <>
+              <div className="text-5xl mb-3">🍜</div>
+              <p className="text-sm">まだ投稿がありません</p>
+              <p className="text-xs mt-1">食事の写真を投稿してみましょう</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {posts.map(post => (
-            <MealCard key={post.id} post={post} currentUserId={currentUserId} onDelete={handleDelete} onReaction={handleReaction} />
+          {displayedPosts.map(post => (
+            <MealCard
+              key={post.id}
+              post={post}
+              currentUserId={currentUserId}
+              onDelete={handleDelete}
+              onLike={handleLike}
+            />
           ))}
         </div>
       )}
