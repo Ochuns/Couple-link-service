@@ -144,9 +144,9 @@
 - [x] T039 [P] `src/app/(app)/settings/page.tsx` を作成し、表示名・プロフィール画像・都市名の変更フォームと `profiles` テーブルへの UPDATE を実装する（FR-013）
 - [x] T040 `src/app/(app)/settings/page.tsx` に接続解除（アカウント解除）フォームを追加し、確認ダイアログ → `couples` レコード削除（CASCADE で tasks/reunions/reunion_photos も削除）→ Supabase Storage の `reunion-photos/{couple_id}/` 一括削除 → 両ユーザーの `profiles.couple_id` を NULL に戻す処理を実装する（FR-014, FR-015, FR-016）（T039 依存）
 - [x] T041 [P] 全ページにローディングスピナーと Suspense Boundary を追加し、3秒以内の表示（SC-006）を確認する（`src/app/(app)/*/loading.tsx` を作成）
-- [ ] T042 [P] 全コンポーネントに Tailwind のレスポンシブクラス（`sm:`, `md:`, `lg:`）を適用し、スマートフォン・タブレット・PCでの表示を確認する（SC-007）
-- [ ] T043 [P] `src/app/(app)/dashboard/page.tsx` に直近の予定（当日・翌日タスク、カウントダウン）をまとめた Quick View セクションを追加する
-- [ ] T044 全 API Route・サーバーアクションのエラーハンドリングを確認し、ユーザーフレンドリーなエラーメッセージを統一する（日本語）
+- [x] T042 [P] 全コンポーネントに Tailwind のレスポンシブクラス（`sm:`, `md:`, `lg:`）を適用し、スマートフォン・タブレット・PCでの表示を確認する（SC-007）
+- [x] T043 [P] `src/app/(app)/dashboard/page.tsx` に直近の予定（当日・翌日タスク、カウントダウン）をまとめた Quick View セクションを追加する
+- [x] T044 全 API Route・サーバーアクションのエラーハンドリングを確認し、ユーザーフレンドリーなエラーメッセージを統一する（日本語）
 
 **Checkpoint**: quickstart.md の手順に従い環境を構築し、ペアリングから全機能が動作することを確認する（SC-001〜SC-007）
 
