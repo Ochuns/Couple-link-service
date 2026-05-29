@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { generateInviteCode, getCodeExpiryDate, isCodeExpired } from '@/lib/invite-code'
-import type { Couple } from '@/types/database'
 
 type Mode = 'select' | 'generate' | 'enter'
 
@@ -61,51 +60,19 @@ export default function InvitePage() {
     if (!user) return
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: coupleData, error: fetchError } = await (supabase.from('couples') as any)
-      .select('*')
-      .eq('invite_code', inviteCode.toUpperCase())
-      .eq('status', 'pending')
-      .single()
-    const couple = coupleData as Couple | null
+    const { data: result, error: rpcError } = await (supabase as any).rpc('accept_invite_code', {
+      p_invite_code: inviteCode.toUpperCase(),
+    })
 
-    if (fetchError || !couple) {
-      setError('招待コードが見つかりません')
+    if (rpcError || !result?.success) {
+      const errCode = result?.error
+      if (errCode === 'invite_not_found') setError('招待コードが見つかりません')
+      else if (errCode === 'invite_expired') setError('この招待コードは期限切れです。パートナーに新しいコードを発行してもらってください。')
+      else if (errCode === 'self_invite') setError('自分の招待コードは使用できません')
+      else setError('接続に失敗しました')
       setLoading(false)
       return
     }
-
-    if (isCodeExpired(couple.invite_expires_at)) {
-      setError('この招待コードは期限切れです。パートナーに新しいコードを発行してもらってください。')
-      setLoading(false)
-      return
-    }
-
-    if (couple.user1_id === user.id) {
-      setError('自分の招待コードは使用できません')
-      setLoading(false)
-      return
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase.from('couples') as any)
-      .update({ user2_id: user.id, status: 'active' })
-      .eq('id', couple.id)
-
-    if (updateError) {
-      setError('接続に失敗しました')
-      setLoading(false)
-      return
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('profiles') as any)
-      .update({ couple_id: couple.id })
-      .eq('id', user.id)
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from('profiles') as any)
-      .update({ couple_id: couple.id })
-      .eq('id', couple.user1_id)
 
     router.push('/dashboard')
   }
