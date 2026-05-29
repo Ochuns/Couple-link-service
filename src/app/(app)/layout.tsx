@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
           <div className="flex items-center gap-6 text-sm">
             <Link href="/dashboard" className="text-gray-600 hover:text-primary-600">ホーム</Link>
-            <Link href="/tasks" className="text-gray-600 hover:text-primary-600">やること</Link>
+            <Link href="/tasks" className="text-gray-600 hover:text-primary-600">やりたいこと</Link>
             <Link href="/album" className="text-gray-600 hover:text-primary-600">アルバム</Link>
             <Link href="/settings" className="text-gray-600 hover:text-primary-600">設定</Link>
           </div>
@@ -44,7 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="grid grid-cols-4 h-16">
           {[
             { href: '/dashboard', label: 'ホーム', icon: '🏠' },
-            { href: '/tasks', label: 'やること', icon: '✅' },
+            { href: '/tasks', label: 'やりたいこと', icon: '✅' },
             { href: '/album', label: 'アルバム', icon: '📸' },
             { href: '/settings', label: '設定', icon: '⚙️' },
           ].map(({ href, label, icon }) => (

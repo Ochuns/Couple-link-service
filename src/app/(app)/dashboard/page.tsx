@@ -115,7 +115,7 @@ export default async function DashboardPage() {
       {pendingTasks.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100 p-4">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-gray-700">✅ やること</p>
+            <p className="text-sm font-semibold text-gray-700">✅ やりたいこと</p>
             <Link href="/tasks" className="text-xs text-primary-600 hover:underline">
               すべて見る →
             </Link>

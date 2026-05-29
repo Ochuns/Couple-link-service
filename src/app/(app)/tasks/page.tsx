@@ -26,7 +26,7 @@ export default async function TasksPage() {
 
   return (
     <div>
-      <h1 className="text-lg font-bold mb-5">やることリスト</h1>
+      <h1 className="text-lg font-bold mb-5">やりたいことリスト</h1>
       <TaskList
         initialTasks={tasks}
         coupleId={profile.couple_id}
