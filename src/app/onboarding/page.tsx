@@ -23,11 +23,29 @@ export default function OnboardingPage() {
       return
     }
 
+    // 都市が設定されている場合、天気APIから座標を取得
+    let cityLat: number | null = null
+    let cityLng: number | null = null
+    if (city.trim()) {
+      try {
+        const res = await fetch(`/api/weather?city=${encodeURIComponent(city.trim())}`)
+        if (res.ok) {
+          const weather = await res.json()
+          cityLat = weather.lat ?? null
+          cityLng = weather.lng ?? null
+        }
+      } catch {
+        // 座標取得失敗は無視して続行
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from('profiles') as any).upsert({
       id: user.id,
       display_name: displayName,
-      city: city || null,
+      city: city.trim() || null,
+      city_lat: cityLat,
+      city_lng: cityLng,
     })
 
     if (error) {

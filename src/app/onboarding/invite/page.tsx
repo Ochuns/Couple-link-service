@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { generateInviteCode, getCodeExpiryDate, isCodeExpired } from '@/lib/invite-code'
+import { generateInviteCode, getCodeExpiryDate } from '@/lib/invite-code'
 
 type Mode = 'select' | 'generate' | 'enter'
 
@@ -14,6 +14,7 @@ export default function InvitePage() {
   const [generatedCode, setGeneratedCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [checkingPair, setCheckingPair] = useState(false)
 
   useEffect(() => {
     if (mode === 'generate') {
@@ -48,6 +49,22 @@ export default function InvitePage() {
 
     setGeneratedCode(code)
     setLoading(false)
+
+    // パートナーがコードを入力したら自動でダッシュボードへ遷移
+    const channel = supabase
+      .channel('profile-pairing-watch')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${user.id}` },
+        (payload) => {
+          const updated = payload.new as { couple_id: string | null }
+          if (updated.couple_id) {
+            supabase.removeChannel(channel)
+            router.push('/dashboard')
+          }
+        }
+      )
+      .subscribe()
   }
 
   async function handleEnterCode(e: React.FormEvent) {
@@ -124,8 +141,29 @@ export default function InvitePage() {
               </div>
               {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
               <p className="text-sm text-gray-500 mb-4">
-                パートナーがコードを入力すると自動的に繋がります
+                パートナーがコードを入力したら下のボタンを押してください
               </p>
+              <button
+                onClick={async () => {
+                  setCheckingPair(true)
+                  const supabase = createClient()
+                  const { data: { user } } = await supabase.auth.getUser()
+                  if (!user) { setCheckingPair(false); return }
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const { data } = await (supabase.from('profiles') as any)
+                    .select('couple_id').eq('id', user.id).single()
+                  if (data?.couple_id) {
+                    router.push('/dashboard')
+                  } else {
+                    setError('まだパートナーが入力していないようです。少し待ってから再度お試しください。')
+                    setCheckingPair(false)
+                  }
+                }}
+                disabled={checkingPair}
+                className="w-full bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-medium rounded-lg py-2 text-sm mb-3 transition-colors"
+              >
+                {checkingPair ? '確認中...' : 'パートナーが入力した ▶'}
+              </button>
               <button
                 onClick={() => setMode('select')}
                 className="text-sm text-gray-500 hover:underline"
