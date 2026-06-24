@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Couple, ReunionPhoto } from '@/types/database'
@@ -10,10 +10,13 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [city, setCity] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [confirmDisconnect, setConfirmDisconnect] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -26,10 +29,43 @@ export default function SettingsPage() {
             setProfile(data)
             setDisplayName(data.display_name)
             setCity(data.city ?? '')
+            setAvatarUrl(data.avatar_url ?? null)
           }
         })
     })
   }, [])
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingAvatar(true)
+
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+
+    const ext = file.name.split('.').pop()
+    const path = `${user.id}/avatar.${ext}`
+
+    const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+    if (error) {
+      setMessage('⚠️ 写真のアップロードに失敗しました')
+      setUploadingAvatar(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+    const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from('profiles') as any).update({ avatar_url: publicUrl }).eq('id', user.id)
+
+    setAvatarUrl(publicUrl)
+    setUploadingAvatar(false)
+    setMessage('写真を更新しました')
+    setTimeout(() => setMessage(null), 3000)
+    router.refresh()
+  }
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -38,7 +74,6 @@ export default function SettingsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    // 都市が設定されている場合、天気APIから座標を取得して保存
     let cityLat: number | null = null
     let cityLng: number | null = null
     if (city.trim()) {
@@ -131,6 +166,39 @@ export default function SettingsPage() {
 
       <form onSubmit={handleSave} className="bg-white rounded-2xl p-5 border border-gray-100 space-y-4">
         <h2 className="font-semibold text-sm text-gray-700">プロフィール</h2>
+
+        {/* アバター写真 */}
+        <div className="flex flex-col items-center gap-2">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingAvatar}
+            className="relative w-20 h-20 rounded-full bg-primary-100 flex items-center justify-center overflow-hidden ring-2 ring-primary-200 hover:ring-primary-400 transition-all disabled:opacity-60"
+          >
+            {avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-3xl font-bold text-primary-600">
+                {displayName?.[0] ?? '?'}
+              </span>
+            )}
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-full">
+              <span className="text-white text-xs font-medium">変更</span>
+            </div>
+          </button>
+          <p className="text-xs text-gray-400">
+            {uploadingAvatar ? 'アップロード中...' : 'タップして写真を変更'}
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
           <input
@@ -151,7 +219,11 @@ export default function SettingsPage() {
             placeholder="例: Tokyo, Osaka"
           />
         </div>
-        {message && <p className="text-sm text-green-600">{message}</p>}
+        {message && (
+          <p className={`text-sm ${message.startsWith('⚠️') ? 'text-red-500' : 'text-green-600'}`}>
+            {message}
+          </p>
+        )}
         <button
           type="submit"
           disabled={saving}
