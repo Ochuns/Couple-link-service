@@ -3,11 +3,10 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Profile, Couple, Task } from '@/types/database'
 import CountdownTimer from '@/components/countdown/CountdownTimer'
-import ReunionDatePicker from '@/components/countdown/ReunionDatePicker'
+
 import WeatherCard from '@/components/weather/WeatherCard'
 import DistanceBadge from '@/components/distance/DistanceBadge'
 import CoupleHeader from '@/components/couple/CoupleHeader'
-import AnniversaryDatePicker from '@/components/couple/AnniversaryDatePicker'
 
 function getUpcomingLabel(dateStr: string): string | null {
   const target = new Date(dateStr)
@@ -80,7 +79,6 @@ export default async function DashboardPage() {
 
       {/* カウントダウン */}
       <CountdownTimer nextReunionAt={couple.next_reunion_at} coupleId={couple.id} />
-      <ReunionDatePicker coupleId={couple.id} currentReunionAt={couple.next_reunion_at} />
 
       {/* カップルヘッダー: アイコン・ハート・記念日 */}
       <CoupleHeader
@@ -90,11 +88,6 @@ export default async function DashboardPage() {
         partnerAvatarUrl={partnerProfile?.avatar_url}
         anniversaryDate={couple.anniversary_date ?? null}
       />
-      <AnniversaryDatePicker
-        coupleId={couple.id}
-        currentAnniversaryDate={couple.anniversary_date ?? null}
-      />
-
       {/* 天気カード */}
       <div className="grid grid-cols-2 gap-3">
         <WeatherCard city={myProfile.city} label="あなた" />

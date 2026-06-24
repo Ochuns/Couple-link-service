@@ -4,10 +4,13 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Couple, ReunionPhoto } from '@/types/database'
+import AnniversaryDatePicker from '@/components/couple/AnniversaryDatePicker'
+import ReunionDatePicker from '@/components/countdown/ReunionDatePicker'
 
 export default function SettingsPage() {
   const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [couple, setCouple] = useState<Couple | null>(null)
   const [displayName, setDisplayName] = useState('')
   const [city, setCity] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
@@ -24,12 +27,20 @@ export default function SettingsPage() {
       if (!user) return
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ;(supabase.from('profiles') as any).select('*').eq('id', user.id).single()
-        .then(({ data }: { data: Profile | null }) => {
+        .then(async ({ data }: { data: Profile | null }) => {
           if (data) {
             setProfile(data)
             setDisplayName(data.display_name)
             setCity(data.city ?? '')
             setAvatarUrl(data.avatar_url ?? null)
+            if (data.couple_id) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const { data: coupleData } = await (supabase.from('couples') as any)
+                .select('*')
+                .eq('id', data.couple_id)
+                .single()
+              setCouple(coupleData ?? null)
+            }
           }
         })
     })
@@ -232,6 +243,35 @@ export default function SettingsPage() {
           {saving ? '保存中...' : '保存する'}
         </button>
       </form>
+
+      {couple && (
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 space-y-4">
+          <h2 className="font-semibold text-sm text-gray-700">カップル設定</h2>
+
+          <div>
+            <p className="text-sm text-gray-600 mb-1">記念日</p>
+            {couple.anniversary_date && (
+              <p className="text-sm font-medium text-primary-600 mb-1">
+                {new Date(couple.anniversary_date).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            )}
+            <AnniversaryDatePicker
+              coupleId={couple.id}
+              currentAnniversaryDate={couple.anniversary_date ?? null}
+            />
+          </div>
+
+          <div className="border-t border-gray-100 pt-4">
+            <p className="text-sm text-gray-600 mb-1">次の再会日</p>
+            {couple.next_reunion_at && (
+              <p className="text-sm font-medium text-primary-600 mb-1">
+                {new Date(couple.next_reunion_at).toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+            )}
+            <ReunionDatePicker coupleId={couple.id} currentReunionAt={couple.next_reunion_at} />
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-2xl p-5 border border-gray-100">
         <h2 className="font-semibold text-sm text-gray-700 mb-4">アカウント</h2>
