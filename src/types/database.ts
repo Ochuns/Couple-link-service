@@ -45,6 +45,7 @@ export interface Database {
           invite_code: string
           invite_expires_at: string
           next_reunion_at: string | null
+          anniversary_date: string | null
           status: 'pending' | 'active'
           created_at: string
           updated_at: string
@@ -56,6 +57,7 @@ export interface Database {
           invite_code: string
           invite_expires_at: string
           next_reunion_at?: string | null
+          anniversary_date?: string | null
           status?: 'pending' | 'active'
           created_at?: string
           updated_at?: string
@@ -63,6 +65,7 @@ export interface Database {
         Update: {
           user2_id?: string | null
           next_reunion_at?: string | null
+          anniversary_date?: string | null
           status?: 'pending' | 'active'
           updated_at?: string
         }

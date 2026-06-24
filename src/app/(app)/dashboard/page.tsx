@@ -3,9 +3,10 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Profile, Couple, Task } from '@/types/database'
 import CountdownTimer from '@/components/countdown/CountdownTimer'
-import ReunionDatePicker from '@/components/countdown/ReunionDatePicker'
+
 import WeatherCard from '@/components/weather/WeatherCard'
 import DistanceBadge from '@/components/distance/DistanceBadge'
+import CoupleHeader from '@/components/couple/CoupleHeader'
 
 function getUpcomingLabel(dateStr: string): string | null {
   const target = new Date(dateStr)
@@ -63,18 +64,6 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* ヘッダー: 2人の名前 */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary-100 flex items-center justify-center text-base sm:text-lg flex-shrink-0">
-          {myProfile.display_name?.[0]}
-        </div>
-        <div className="text-sm text-gray-500 min-w-0">
-          <span className="font-semibold text-gray-800 truncate">{myProfile.display_name}</span>
-          {' & '}
-          <span className="font-semibold text-gray-800 truncate">{partnerProfile?.display_name ?? '...'}</span>
-        </div>
-      </div>
-
       {/* Quick View: 再会日が今日・明日 */}
       {reunionLabel && couple.next_reunion_at && (
         <div className="bg-primary-600 text-white rounded-2xl px-4 py-3 flex items-center gap-2">
@@ -90,8 +79,15 @@ export default async function DashboardPage() {
 
       {/* カウントダウン */}
       <CountdownTimer nextReunionAt={couple.next_reunion_at} coupleId={couple.id} />
-      <ReunionDatePicker coupleId={couple.id} currentReunionAt={couple.next_reunion_at} />
 
+      {/* カップルヘッダー: アイコン・ハート・記念日 */}
+      <CoupleHeader
+        myName={myProfile.display_name}
+        partnerName={partnerProfile?.display_name ?? '...'}
+        myAvatarUrl={myProfile.avatar_url}
+        partnerAvatarUrl={partnerProfile?.avatar_url}
+        anniversaryDate={couple.anniversary_date ?? null}
+      />
       {/* 天気カード */}
       <div className="grid grid-cols-2 gap-3">
         <WeatherCard city={myProfile.city} label="あなた" />
