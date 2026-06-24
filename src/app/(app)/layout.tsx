@@ -26,9 +26,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Link href="/dashboard" className="text-lg font-bold text-primary-700">
             Ochuna Link
           </Link>
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex items-center gap-5 text-sm">
             <Link href="/dashboard" className="text-gray-600 hover:text-primary-600">ホーム</Link>
+            <Link href="/calendar" className="text-gray-600 hover:text-primary-600">カレンダー</Link>
             <Link href="/tasks" className="text-gray-600 hover:text-primary-600">やりたいこと</Link>
+            <Link href="/meals" className="text-gray-600 hover:text-primary-600">ごはん</Link>
             <Link href="/album" className="text-gray-600 hover:text-primary-600">アルバム</Link>
             <Link href="/settings" className="text-gray-600 hover:text-primary-600">設定</Link>
           </div>
@@ -41,10 +43,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
       {/* モバイル下部タブバー */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 sm:hidden z-10">
-        <div className="grid grid-cols-4 h-16">
+        <div className="grid grid-cols-6 h-16">
           {[
             { href: '/dashboard', label: 'ホーム', icon: '🏠' },
+            { href: '/calendar', label: 'カレンダー', icon: '📅' },
             { href: '/tasks', label: 'やりたいこと', icon: '✅' },
+            { href: '/meals', label: 'ごはん', icon: '🍽️' },
             { href: '/album', label: 'アルバム', icon: '📸' },
             { href: '/settings', label: '設定', icon: '⚙️' },
           ].map(({ href, label, icon }) => (

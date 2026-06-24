@@ -38,10 +38,32 @@ export default function SettingsPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
+    // 都市が設定されている場合、天気APIから座標を取得して保存
+    let cityLat: number | null = null
+    let cityLng: number | null = null
+    if (city.trim()) {
+      try {
+        const res = await fetch(`/api/weather?city=${encodeURIComponent(city.trim())}`)
+        if (res.ok) {
+          const weather = await res.json()
+          cityLat = weather.lat ?? null
+          cityLng = weather.lng ?? null
+        } else if (res.status === 404) {
+          setMessage('⚠️ 都市が見つかりませんでした。英語の都市名（例: Tokyo）で入力してください。')
+          setSaving(false)
+          return
+        }
+      } catch {
+        // 座標取得失敗は無視して保存続行
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from('profiles') as any).update({
       display_name: displayName,
-      city: city || null,
+      city: city.trim() || null,
+      city_lat: cityLat,
+      city_lng: cityLng,
     }).eq('id', user.id)
 
     setMessage('保存しました')

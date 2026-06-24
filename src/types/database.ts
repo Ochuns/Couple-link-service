@@ -139,6 +139,83 @@ export interface Database {
         }
         Relationships: []
       }
+      calendar_events: {
+        Row: {
+          id: string
+          couple_id: string
+          title: string
+          description: string | null
+          event_date: string
+          event_type: 'anniversary' | 'video_date' | 'meal_date' | 'other'
+          created_by: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          couple_id: string
+          title: string
+          description?: string | null
+          event_date: string
+          event_type?: 'anniversary' | 'video_date' | 'meal_date' | 'other'
+          created_by: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          title?: string
+          description?: string | null
+          event_date?: string
+          event_type?: 'anniversary' | 'video_date' | 'meal_date' | 'other'
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meal_posts: {
+        Row: {
+          id: string
+          couple_id: string
+          photo_path: string
+          memo: string | null
+          together_flag: boolean
+          created_by: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          couple_id: string
+          photo_path: string
+          memo?: string | null
+          together_flag?: boolean
+          created_by: string
+          created_at?: string
+        }
+        Update: {
+          memo?: string | null
+          together_flag?: boolean
+        }
+        Relationships: []
+      }
+      meal_reactions: {
+        Row: {
+          id: string
+          meal_post_id: string
+          user_id: string
+          emoji: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          meal_post_id: string
+          user_id: string
+          emoji: string
+          created_at?: string
+        }
+        Update: {
+          emoji?: string
+        }
+        Relationships: []
+      }
       weather_cache: {
         Row: {
           id: string
@@ -192,3 +269,6 @@ export type Task = Database['public']['Tables']['tasks']['Row']
 export type Reunion = Database['public']['Tables']['reunions']['Row']
 export type ReunionPhoto = Database['public']['Tables']['reunion_photos']['Row']
 export type WeatherCache = Database['public']['Tables']['weather_cache']['Row']
+export type CalendarEvent = Database['public']['Tables']['calendar_events']['Row']
+export type MealPost = Database['public']['Tables']['meal_posts']['Row']
+export type MealReaction = Database['public']['Tables']['meal_reactions']['Row']
