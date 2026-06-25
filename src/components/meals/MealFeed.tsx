@@ -158,6 +158,11 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
     setPosts(prev => prev.filter(p => p.id !== id))
   }
 
+  // 投稿を編集して保存したときに、フィード内の該当カードを更新する
+  function handleUpdate(id: string, fields: Pick<MealPost, 'dish_name' | 'memo' | 'recipe' | 'together_flag'>) {
+    setPosts(prev => prev.map(p => p.id === id ? { ...p, ...fields } : p))
+  }
+
   // ハートボタンを押したときにリアクション状態を更新する
   function handleLike(postId: string, liked: boolean, reactionId: string | null) {
     setPosts(prev =>
@@ -372,6 +377,7 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
               currentUserId={currentUserId}
               onDelete={handleDelete}
               onLike={handleLike}
+              onUpdate={handleUpdate}
             />
           ))}
         </div>
