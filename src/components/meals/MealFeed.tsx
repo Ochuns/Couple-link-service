@@ -363,8 +363,8 @@ export default function MealFeed({ initialPosts, coupleId, currentUserId }: Prop
           )}
         </div>
       ) : (
-        // 投稿カードの一覧（1カラムで表示してInstagramライクに）
-        <div className="space-y-4">
+        // 投稿カードの一覧（2カラムグリッドで表示）
+        <div className="grid grid-cols-2 gap-3">
           {displayedPosts.map(post => (
             <MealCard
               key={post.id}

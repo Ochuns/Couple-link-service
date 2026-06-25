@@ -68,23 +68,19 @@ export default function MealCard({ post, currentUserId, onDelete, onLike }: Prop
   return (
     <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
 
-      {/* カードのヘッダー：投稿者情報・削除ボタン */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-50">
-        <div className="flex items-center gap-2">
+      {/* カードのヘッダー：投稿日時・削除ボタン */}
+      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-50">
+        <span className="text-[10px] text-gray-400">{timeStr}</span>
+        <div className="flex items-center gap-1.5">
           {/* 一緒に食べたよ バッジ */}
           {post.together_flag && (
-            <span className="bg-primary-50 text-primary-700 text-xs px-2.5 py-0.5 rounded-full font-medium">
-              🍽️ 一緒に食べたよ
-            </span>
+            <span className="text-[10px] text-primary-600">🍽️</span>
           )}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-400">{timeStr}</span>
           {/* 自分の投稿にのみ削除ボタンを表示 */}
           {post.created_by === currentUserId && (
             <button
               onClick={handleDelete}
-              className="text-gray-300 hover:text-red-400 text-xs transition-colors"
+              className="text-gray-300 hover:text-red-400 text-[10px] transition-colors"
               aria-label="投稿を削除"
             >
               ✕
@@ -98,43 +94,43 @@ export default function MealCard({ post, currentUserId, onDelete, onLike }: Prop
         <Image src={post.signedUrl} alt="ごはん写真" fill className="object-cover" />
       </div>
 
-      {/* 投稿の詳細エリア */}
-      <div className="px-4 pt-3 pb-4 space-y-2">
+      {/* 投稿の詳細エリア（2列表示に合わせてコンパクトに） */}
+      <div className="px-2.5 pt-2 pb-2.5 space-y-1">
 
         {/* アクションバー：ハートボタン */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={handleLike}
-            className={`flex items-center gap-1 transition-transform active:scale-110 ${
+            className={`flex items-center transition-transform active:scale-110 ${
               liked ? 'text-pink-500' : 'text-gray-300 hover:text-pink-300'
             }`}
             aria-label={liked ? 'ハートを外す' : 'ハートを押す'}
           >
-            <span className="text-2xl">{liked ? '❤️' : '🤍'}</span>
+            <span className="text-lg">{liked ? '❤️' : '🤍'}</span>
           </button>
           {/* ハートの数が1以上のときだけ件数を表示 */}
           {likeCount > 0 && (
-            <span className="text-sm font-semibold text-gray-700">{likeCount}</span>
+            <span className="text-xs font-semibold text-gray-700">{likeCount}</span>
           )}
         </div>
 
         {/* 料理名（設定されている場合のみ表示） */}
         {post.dish_name && (
-          <p className="text-base font-bold text-gray-900">{post.dish_name}</p>
+          <p className="text-xs font-bold text-gray-900 leading-snug">{post.dish_name}</p>
         )}
 
-        {/* 一言キャプション（設定されている場合のみ表示） */}
+        {/* 一言キャプション（設定されている場合のみ表示、長い場合は2行で切る） */}
         {post.memo && (
-          <p className="text-sm text-gray-700 leading-relaxed">{post.memo}</p>
+          <p className="text-[11px] text-gray-600 leading-snug line-clamp-2">{post.memo}</p>
         )}
 
         {/* 作り方セクション（recipe が設定されている場合のみ表示） */}
         {post.recipe && (
-          <div className="mt-1">
+          <div>
             {/* 展開/折りたたみボタン */}
             <button
               onClick={() => setRecipeExpanded(prev => !prev)}
-              className="flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors"
+              className="flex items-center gap-1 text-[10px] font-medium text-primary-600 hover:text-primary-700 transition-colors"
             >
               <span>🍳 作り方</span>
               {/* 開閉状態に応じてアイコンを切り替え */}
@@ -145,9 +141,9 @@ export default function MealCard({ post, currentUserId, onDelete, onLike }: Prop
 
             {/* 展開時に作り方テキストを表示 */}
             {recipeExpanded && (
-              <div className="mt-2 bg-amber-50 rounded-xl px-3 py-2.5">
+              <div className="mt-1.5 bg-amber-50 rounded-lg px-2 py-1.5">
                 {/* 改行を保持して表示（whitespace-pre-line） */}
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                <p className="text-[11px] text-gray-700 leading-relaxed whitespace-pre-line">
                   {post.recipe}
                 </p>
               </div>
