@@ -5,7 +5,6 @@ import type { Profile, Couple, Task } from '@/types/database'
 import CountdownTimer from '@/components/countdown/CountdownTimer'
 
 import WeatherCard from '@/components/weather/WeatherCard'
-import DistanceBadge from '@/components/distance/DistanceBadge'
 import CoupleHeader from '@/components/couple/CoupleHeader'
 
 function getUpcomingLabel(dateStr: string): string | null {
@@ -96,16 +95,6 @@ export default async function DashboardPage() {
           label={partnerProfile?.display_name ?? 'パートナー'}
         />
       </div>
-
-      {/* 距離バッジ */}
-      {myProfile.city_lat && myProfile.city_lng && partnerProfile?.city_lat && partnerProfile?.city_lng && (
-        <DistanceBadge
-          lat1={myProfile.city_lat}
-          lng1={myProfile.city_lng}
-          lat2={partnerProfile.city_lat}
-          lng2={partnerProfile.city_lng}
-        />
-      )}
 
       {/* Quick View: やることリスト（未完了タスク最大3件） */}
       {pendingTasks.length > 0 && (
