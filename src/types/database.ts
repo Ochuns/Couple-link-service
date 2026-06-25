@@ -179,7 +179,9 @@ export interface Database {
           id: string
           couple_id: string
           photo_path: string
-          memo: string | null
+          dish_name: string | null  // 料理名（例：カレーライス）
+          memo: string | null       // 一言キャプション
+          recipe: string | null     // 作り方の手順（複数行）
           together_flag: boolean
           created_by: string
           created_at: string
@@ -188,13 +190,17 @@ export interface Database {
           id?: string
           couple_id: string
           photo_path: string
+          dish_name?: string | null
           memo?: string | null
+          recipe?: string | null
           together_flag?: boolean
           created_by: string
           created_at?: string
         }
         Update: {
+          dish_name?: string | null
           memo?: string | null
+          recipe?: string | null
           together_flag?: boolean
         }
         Relationships: []
