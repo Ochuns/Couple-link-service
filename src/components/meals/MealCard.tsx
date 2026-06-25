@@ -27,6 +27,9 @@ export default function MealCard({ post, currentUserId, onDelete, onLike, onUpda
   // 作り方の展開/折りたたみ状態
   const [recipeExpanded, setRecipeExpanded] = useState(false)
 
+  // 削除確認モーダルの表示状態
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+
   // 編集モーダルの開閉状態
   const [editing, setEditing] = useState(false)
 
@@ -116,12 +119,9 @@ export default function MealCard({ post, currentUserId, onDelete, onLike, onUpda
         <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-gray-50">
           <span className="text-[10px] text-gray-400">{timeStr}</span>
           <div className="flex items-center gap-1.5">
-            {post.together_flag && (
-              <span className="text-[10px] text-primary-600">🍽️</span>
-            )}
             {isOwn && (
               <button
-                onClick={handleDelete}
+                onClick={() => setConfirmingDelete(true)}
                 className="text-gray-300 hover:text-red-400 text-[10px] transition-colors"
                 aria-label="投稿を削除"
               >
@@ -148,19 +148,25 @@ export default function MealCard({ post, currentUserId, onDelete, onLike, onUpda
 
         {/* 詳細エリア */}
         <div className="px-2.5 pt-2 pb-2.5 space-y-1">
-          {/* ハートボタン */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={handleLike}
-              className={`flex items-center transition-transform active:scale-110 ${
-                liked ? 'text-pink-500' : 'text-gray-300 hover:text-pink-300'
-              }`}
-              aria-label={liked ? 'ハートを外す' : 'ハートを押す'}
-            >
-              <span className="text-lg">{liked ? '❤️' : '🤍'}</span>
-            </button>
-            {likeCount > 0 && (
-              <span className="text-xs font-semibold text-gray-700">{likeCount}</span>
+          {/* ハートボタンと一緒に食べたバッジを同じ行に表示 */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleLike}
+                className={`flex items-center transition-transform active:scale-110 ${
+                  liked ? 'text-pink-500' : 'text-gray-300 hover:text-pink-300'
+                }`}
+                aria-label={liked ? 'ハートを外す' : 'ハートを押す'}
+              >
+                <span className="text-lg">{liked ? '❤️' : '🤍'}</span>
+              </button>
+              {likeCount > 0 && (
+                <span className="text-xs font-semibold text-gray-700">{likeCount}</span>
+              )}
+            </div>
+            {/* 一緒に食べたよフラグが立っているときだけ右側に表示 */}
+            {post.together_flag && (
+              <span className="text-base">🍽️</span>
             )}
           </div>
 
@@ -191,7 +197,37 @@ export default function MealCard({ post, currentUserId, onDelete, onLike, onUpda
             </div>
           )}
         </div>
+
       </div>
+
+      {/* ---- 削除確認モーダル
+           ✕ ボタンを押したときに表示する。背景タップでキャンセル ---- */}
+      {confirmingDelete && (
+        <div
+          className="fixed inset-0 z-50 bg-black/50 flex items-end"
+          onClick={() => setConfirmingDelete(false)}
+        >
+          <div
+            className="w-full bg-white rounded-t-2xl p-5 space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <p className="text-center text-sm font-semibold text-gray-800">この投稿を削除しますか？</p>
+            <p className="text-center text-xs text-gray-400">削除すると元に戻せません</p>
+            <button
+              onClick={() => { setConfirmingDelete(false); handleDelete() }}
+              className="w-full py-3 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors"
+            >
+              削除する
+            </button>
+            <button
+              onClick={() => setConfirmingDelete(false)}
+              className="w-full py-3 rounded-xl bg-gray-100 text-gray-700 text-sm font-medium hover:bg-gray-200 transition-colors"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ---- 編集モーダル（ボトムシート）
            editing が true のときだけ表示する
