@@ -1,29 +1,56 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Reunion } from '@/types/database'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024
 
+// ファイルからブラウザ上で表示できるプレビューURLを生成するユーティリティ
+function createPreviews(files: File[]): string[] {
+  return files.map((f) => URL.createObjectURL(f))
+}
+
 export default function NewReunionPage() {
   const router = useRouter()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [date, setDate] = useState('')
   const [comment, setComment] = useState('')
+  // 選択されたファイルの配列
   const [files, setFiles] = useState<File[]>([])
+  // プレビュー表示用のオブジェクトURL配列（filesと1対1で対応）
+  const [previews, setPreviews] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
+  // ファイルが選択されたときに呼ばれる
+  // サイズチェック後、既存の選択に追加する形でstateを更新する
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = Array.from(e.target.files ?? [])
+    if (selected.length === 0) return
+
     const oversized = selected.find((f) => f.size > MAX_FILE_SIZE)
     if (oversized) {
       setError('10MBを超えるファイルはアップロードできません')
       return
     }
     setError(null)
-    setFiles(selected)
+
+    // 既存の選択に新しいファイルを追加（上書きではなく追加）
+    setFiles((prev) => [...prev, ...selected])
+    setPreviews((prev) => [...prev, ...createPreviews(selected)])
+
+    // 同じファイルを再度選択できるようにinputをリセット
+    e.target.value = ''
+  }
+
+  // プレビューから1枚削除する
+  function handleRemoveFile(index: number) {
+    URL.revokeObjectURL(previews[index])
+    setFiles((prev) => prev.filter((_, i) => i !== index))
+    setPreviews((prev) => prev.filter((_, i) => i !== index))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -103,20 +130,77 @@ export default function NewReunionPage() {
             className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
         </div>
+
+        {/* 写真選択エリア */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">写真</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            写真
+            <span className="text-xs font-normal text-gray-400 ml-1">（複数枚選択できます）</span>
+          </label>
+
+          {/* 隠しファイル入力 */}
           <input
+            ref={fileInputRef}
             type="file"
-            required
             accept="image/jpeg,image/png,image/webp"
             multiple
+            className="hidden"
             onChange={handleFileChange}
-            className="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary-50 file:text-primary-700"
           />
-          {files.length > 0 && (
-            <p className="text-xs text-gray-400 mt-1">{files.length}枚選択中</p>
+
+          {/* プレビューグリッド：選択した写真のサムネイルを3列で表示 */}
+          {previews.length > 0 && (
+            <div className="grid grid-cols-3 gap-1 mb-2">
+              {previews.map((url, i) => (
+                <div key={i} className="relative aspect-square">
+                  <Image
+                    src={url}
+                    alt={`選択中の写真 ${i + 1}`}
+                    fill
+                    className="object-cover rounded-lg"
+                  />
+                  {/* 各サムネイルの右上に削除ボタン */}
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFile(i)}
+                    className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs z-10"
+                    aria-label="この写真を削除"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+
+              {/* 追加ボタン：既に選択済みの写真に追加できる */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="aspect-square border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center text-gray-400 text-xs gap-1"
+              >
+                <span className="text-xl">+</span>
+                <span>追加</span>
+              </button>
+            </div>
+          )}
+
+          {/* まだ写真が選ばれていないときの選択ボタン */}
+          {previews.length === 0 && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full py-8 border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center text-gray-400 gap-2"
+            >
+              <span className="text-3xl">📷</span>
+              <span className="text-sm">タップして写真を選ぶ</span>
+              <span className="text-xs">複数枚まとめて選択できます</span>
+            </button>
+          )}
+
+          {previews.length > 0 && (
+            <p className="text-xs text-gray-400">{previews.length}枚選択中</p>
           )}
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">コメント（任意）</label>
           <textarea
@@ -133,7 +217,7 @@ export default function NewReunionPage() {
         <div className="flex gap-2">
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || files.length === 0}
             className="flex-1 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-medium rounded-lg py-2 text-sm transition-colors"
           >
             {loading ? '投稿中...' : '投稿する'}
